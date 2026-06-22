@@ -121,8 +121,19 @@
                             console.log('Kinopoisk', 'No movie found for kinopoisk id: ' + String(m.movie.id) + ', movie: ' + title);
                             calculateProgress(receivedMoviesCount, processedItems++);
                         }
-                    }, function(data) {
-                        console.log('Kinopoisk', 'kinopoiskapiunofficial error, data: ' + String(data));
+                    }, function (data) {
+                        console.log('Kinopoisk', 'Alloha error');
+
+                        try {
+                            console.log(
+                                'Kinopoisk',
+                                JSON.stringify(data, Object.getOwnPropertyNames(data), 2)
+                            );
+                        } catch (e) {
+                            console.log('Kinopoisk', 'Cannot stringify error:', e);
+                            console.log('Kinopoisk raw:', data);
+                        }
+
                         calculateProgress(receivedMoviesCount, processedItems++);
                     }, false, {
                         type: 'get' //,
