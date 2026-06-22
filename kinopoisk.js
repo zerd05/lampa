@@ -48,7 +48,16 @@
                     console.log('Kinopoisk', 'Getting details for movie: ' + String(m.movie.id) + ', movie title: ' + title);
                     // getting imdb id based on kinopoisk id
                     // network.silent('https://kinopoiskapiunofficial.tech/api/v2.2/films/' + String(m.movie.id), function(data) {
-                    network.silent('http://api.alloha.tv/?token=04941a9a3ca3ac16e2b4327347bbc1&kp=' + String(m.movie.id), function(data) {
+                    network.silent('data:application/json,' + encodeURIComponent(JSON.stringify({
+                        data: {
+                            id_imdb: null,
+                            id_tmdb: null,
+                            original_name: m.movie.title,
+                            name: m.movie.title,
+                            year: m.movie.year,
+                            category: 1
+                        }
+                    })), function (data) {
                         if (data && data.data) {
                             var movieIMDBid = data.data.id_imdb;
                             var movieTMDBid = data.data.id_tmdb ? data.data.id_tmdb : null;
