@@ -3,7 +3,7 @@
     var network = new Lampa.Reguest();
 
     function getRandomKinopoiskTechKey() {
-        const keys = ['8c8e1a50-6322-4135-8875-5d40a5420d86', 'f1d94351-2911-4485-b037-97817098724e', '8c8e1a50-6322-4135-8875-5d40a5420d86'];
+        const keys = ['8c8e1a50-6322-4135-8875-5d40a5420d86', 'f1d94351-2911-4485-b037-97817098724e', '0cb735ff-8ff0-4140-89f4-e638bd053a32'];
         const randomIndex = Math.floor(Math.random() * keys.length);
         return keys[randomIndex];
     }
@@ -47,56 +47,35 @@
                     var title = m.movie.title.localized || m.movie.title.original;
                     console.log('Kinopoisk', 'Getting details for movie: ' + String(m.movie.id) + ', movie title: ' + title);
                     // getting imdb id based on kinopoisk id
-                    // network.silent('https://kinopoiskapiunofficial.tech/api/v2.2/films/' + String(m.movie.id), function(data) {
-                    network.silent('data:application/json,' + encodeURIComponent(JSON.stringify({
-                        data: {
-                            id_imdb: null,
-                            id_tmdb: null,
-                            original_name: m.movie.title,
-                            name: m.movie.title,
-                            year: m.movie.year,
-                            category: 1
-                        }
-                    })), function (data) {
-                        if (data && data.data) {
-                            var movieIMDBid = data.data.id_imdb;
-                            var movieTMDBid = data.data.id_tmdb ? data.data.id_tmdb : null;
-                            var movieTitle = data.data.original_name ? data.data.original_name : data.data.name;
-                            if (data.data.category == 1) {
-                                var movieType = 'movie';
-                            } else { // 2
-                                var movieType = 'tv';
-                            }
-                            var movieYear = data.data.year;
-                            if (movieTMDBid) {
-                                console.log('Kinopoisk', 'TMDB movie id found: ' + String(movieTMDBid) + ' for kinopoisk id: ' + String(m.movie.id));
-                                var url = Lampa.Utils.protocol() + 'tmdb.'+ Lampa.Manifest.cub_domain +'/3/' + movieType + '/' + String(movieTMDBid) + '?api_key=4ef0d7355d9ffb5151e987764708ce96&language=ru';
+                    network.silent('https://kinopoiskapiunofficial.tech/api/v2.2/films/' + String(m.movie.id), function(data) {
+                        if (data) {
+                            var movieIMDBid = data.imdbId;
+                            var movieTitle = data.nameOriginal ? data.nameOriginal : data.nameRu;
+                            var movieType = data.type; // TV_SERIES or FILM
+                            var movieYear = data.year;
+                            if (movieIMDBid) {
+                                console.log('Kinopoisk', 'IMDB movie id found: ' + String(data.imdbId) + ' for kinopoisk id: ' + String(m.movie.id));
+                                var url = 'https://apitmdb.cub.red/3/find/' + movieIMDBid + '?external_source=imdb_id&language=ru&api_key=4ef0d7355d9ffb5151e987764708ce96';
                             } else {
-                                if (movieType === 'movie') {
+                                if (movieType === 'FILM') {
                                     console.log('Kinopoisk', 'No IMDB movie id found for kinopoisk id: ' + String(m.movie.id) + ', will search by movie title: ' + movieTitle);
-                                    var url = Lampa.Utils.protocol() + 'tmdb.'+ Lampa.Manifest.cub_domain +'/3/search/movie?query=' + encodeURIComponent(movieTitle) + '&api_key=4ef0d7355d9ffb5151e987764708ce96&year=' + String(movieYear) + '&language=ru';
+                                    var url = 'https://apitmdb.cub.red/3/search/movie?query=' + encodeURIComponent(movieTitle) + '&api_key=4ef0d7355d9ffb5151e987764708ce96&year=' + String(movieYear) + '&language=ru';
                                 } else { // TV_SERIES
                                     console.log('Kinopoisk', 'No IMDB movie id found for kinopoisk id: ' + String(m.movie.id) + ', will search by tv series title: ' + movieTitle);
-                                    var url = Lampa.Utils.protocol() + 'tmdb.'+ Lampa.Manifest.cub_domain +'/3/search/tv?query=' + encodeURIComponent(movieTitle) + '&api_key=4ef0d7355d9ffb5151e987764708ce96&year=' + String(movieYear) + '&language=ru';
+                                    var url = 'https://tmapi.cub.red/3/search/tv?query=' + encodeURIComponent(movieTitle) + '&api_key=4ef0d7355d9ffb5151e987764708ce96&year=' + String(movieYear) + '&language=ru';
                                 }
                             }
                             // getting movie details
                             network.silent(url, function(data) {
                                 if(data) {
-                                    if (movieTMDBid) {
-                                        var movieItem = data;
-                                    } else {
-                                        if (data.movie_results && data.movie_results[0]) {
-                                            var movieItem = data.movie_results[0];
-                                        } else if(data.tv_results && data.tv_results[0]) {
-                                            var movieItem = data.tv_results[0];
-                                        } else if(data.results && data.results[0]) {
-                                            var movieItem = data.results[0];
-                                        }
+                                    if(data.movie_results && data.movie_results[0]) {
+                                        var movieItem = data.movie_results[0];
+                                    } else if(data.tv_results && data.tv_results[0]) {
+                                        var movieItem = data.tv_results[0];
+                                    } else if(data.results && data.results[0]) {
+                                        var movieItem = data.results[0];
                                     }
                                     if(movieItem) {
-
-                                        // console.log('Kinopoisk', 'Movie details received: ' + JSON.stringify(movieItem));
                                         console.log('Kinopoisk', 'TMDB id found: ' + movieItem.id + ' for IMDB movie id: ' + movieIMDBid + ', kinopoisk id: ' + String(m.movie.id));
 
                                         var movieDateStr = movieItem.release_date || movieItem.first_air_date; // film or tv series
@@ -130,25 +109,14 @@
                             console.log('Kinopoisk', 'No movie found for kinopoisk id: ' + String(m.movie.id) + ', movie: ' + title);
                             calculateProgress(receivedMoviesCount, processedItems++);
                         }
-                    }, function (data) {
-                        console.log('Kinopoisk', 'Alloha error');
-
-                        try {
-                            console.log(
-                                'Kinopoisk',
-                                JSON.stringify(data, Object.getOwnPropertyNames(data), 2)
-                            );
-                        } catch (e) {
-                            console.log('Kinopoisk', 'Cannot stringify error:', e);
-                            console.log('Kinopoisk raw:', data);
-                        }
-
+                    }, function(data) {
+                        console.log('Kinopoisk', 'kinopoiskapiunofficial error, data: ' + String(data));
                         calculateProgress(receivedMoviesCount, processedItems++);
                     }, false, {
-                        type: 'get' //,
-                        // headers: {
-                        //     'X-API-KEY': getRandomKinopoiskTechKey()
-                        // }
+                        type: 'get',
+                        headers: {
+                            'X-API-KEY': getRandomKinopoiskTechKey()
+                        }
                     });
                 } else {
                     console.log('Kinopoisk', 'Reading data from local storage for movie: ' + String(m.movie.id))
